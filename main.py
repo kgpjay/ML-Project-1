@@ -37,8 +37,6 @@ tree = DecisionTree()
 tree.fit(X_train, y_train) 
 
 y_pred = tree.predict(X_test)
-
-print(len(y_pred))
 print(y_pred)
 
 none = 0
@@ -53,6 +51,8 @@ for pred in y_pred:
         none += 1
 
 print(none, yes, no )
+
+print(f"accuracy of {tree.accuracy(y_pred, y_test)}")
 
 # Using sklearn 
 # kf = KFold(n_splits=5, shuffle=True, random_state=4) 

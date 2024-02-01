@@ -28,9 +28,7 @@ class DecisionTree:
         print("Done training")
 
     def predict(self, X_test):
-        y_pred = [None for i in range(X_test.shape[0])] 
-        print(len(y_pred))
-        print(X_test)
+        y_pred = pd.Series(range(X_test.shape[0]), index=X_test.index)
 
         for index, row in X_test.iterrows():
             print(index)
@@ -38,7 +36,6 @@ class DecisionTree:
         
         return y_pred
 
-    
     def entropy(self, X_train, y_train, attributes_taken):
         y_count = { key : 0 for key in y_train.unique() }
 
@@ -179,3 +176,12 @@ class DecisionTree:
                 return None 
             return self.get_class(row, current_node.next[row[current_node.attribute]])
     
+    def accuracy(self, y_pred, y_test):
+        same = 0
+        diff = 0 
+        for index in y_test.index:
+            if y_pred[index] == y_test[index]:
+                same += 1 
+            else:
+                diff += 1 
+        return same/(same+diff) 
