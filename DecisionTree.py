@@ -1,4 +1,5 @@
 import math 
+import pandas as pd 
 
 
 # tree nodes 
@@ -23,7 +24,20 @@ class DecisionTree:
         self.max_depth = max_depth 
     
     def fit(self, X_train, y_train):
-        self.root = self.build(self, X_train, y_train, {})
+        self.root = self.build(X_train, y_train, {})
+        print("Done training")
+
+    def predict(self, X_test):
+        y_pred = [None for i in range(X_test.shape[0])] 
+        print(len(y_pred))
+        print(X_test)
+
+        for index, row in X_test.iterrows():
+            print(index)
+            y_pred[index] = self.get_class(row, self.root)
+        
+        return y_pred
+
     
     def entropy(self, X_train, y_train, attributes_taken):
         y_count = { key : 0 for key in y_train.unique() }
@@ -55,11 +69,6 @@ class DecisionTree:
         
         return entropy
 
-    def __build_leaf(self, X_train, y_train, attributes_taken):
-        # build leaf node here, check majority of current classes, 
-        return 0
-    
-    
     def information_gain(self, X_train, y_train, attributes_taken, attr, initial_entropy):
         attr_values_cnt = { key : 0 for key in X_train[attr].unique() } 
         attr_values_entropies = { key : 0 for key in X_train[attr].unique() } 
@@ -99,14 +108,33 @@ class DecisionTree:
         # print(f"this is new entropy {new_entropy}")
         return initial_entropy - new_entropy 
                
+    def build_leaf(self, X_train, y_train, attributes_taken):
+        # build leaf node here, check majority of current classes, 
+        class_cnt = { key : 0 for key in y_train.unique() }
+        for index, row in X_train.iterrows():
+            correct_row = True 
+
+            for attribute_taken, value in attributes_taken.items():
+                if row[attribute_taken] != value:
+                    correct_row = False
+            
+            if not correct_row:
+                continue
+            
+            class_cnt[y_train[index]] += 1 
+        
+        # get key max value in class_cnt
+        choosen_class = max(class_cnt, key=class_cnt.get)
+
+        #create a node object 
+        return self.node(final_class=choosen_class)
     
     def build(self, X_train, y_train, attributes_taken):
         initial_entropy = self.entropy(X_train, y_train, attributes_taken)
 
         if initial_entropy == 0.0:
             #Make a leaf node 
-
-            leaf = self.build_leaf(self, X_train, y_train, attributes_taken)
+            leaf = self.build_leaf(X_train, y_train, attributes_taken)
             return leaf 
         else:
             igs = {}
@@ -116,10 +144,38 @@ class DecisionTree:
 
                 igs[attr] = self.information_gain(X_train, y_train, attributes_taken, attr, initial_entropy) 
             
-            print(igs)
-            choosen_one = max(igs, key=igs.get) 
+            # print(igs)
+            choosen_attr = max(igs, key=igs.get) 
 
-            print(f"We have choose {choosen_one} with IG {igs[choosen_one]}")
+            # print(f"We have choose {choosen_attr} with IG {igs[choosen_attr]}")
             # new_node = self.node(attribute=choosen_one)
-            # move to childs 
-        
+
+            # Exhuasted all atributes 
+            if len(igs) == 0:
+                leaf = self.build_leaf(X_train, y_train, attributes_taken)
+                return leaf 
+            else:
+                # move to childs 
+                new_node = self.node(attribute=choosen_attr)
+                new_node.next = { key : None for key in X_train[choosen_attr].unique() }
+
+                for value in new_node.next:
+                    attributes_taken[choosen_attr] = value
+                    new_node.next[value] = self.build(X_train, y_train, attributes_taken)
+                    attributes_taken.pop(choosen_attr) 
+                
+                return new_node 
+
+    def get_class(self, row, current_node):
+        # some thing wrong happened  
+        if not current_node:
+            return None 
+
+        if current_node.final_class:
+            return current_node.final_class 
+        else:
+            # print(current_node.attribute, row[current_node.attribute], row[current_node.attribute] in current_node.next)
+            if not row[current_node.attribute] in current_node.next:
+                return None 
+            return self.get_class(row, current_node.next[row[current_node.attribute]])
+    

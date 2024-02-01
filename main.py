@@ -29,15 +29,30 @@ print(df.shape)
 X = df.drop('Recurred', axis=1)
 Y = df['Recurred']
 
-print(X.columns[15])
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+
+print(X_test.shape, y_test.shape) 
 
 tree = DecisionTree()
-initial_entropy = tree.entropy(X, Y, {})
+tree.fit(X_train, y_train) 
 
-print(initial_entropy)
-print(tree.information_gain(X, Y, {}, "Smoking", initial_entropy)) 
+y_pred = tree.predict(X_test)
 
-tree.build(X, Y, {})
+print(len(y_pred))
+print(y_pred)
+
+none = 0
+yes = 0 
+no = 0
+for pred in y_pred:
+    if pred == "Yes":
+        yes += 1 
+    elif pred == "No":
+        no += 1
+    else:
+        none += 1
+
+print(none, yes, no )
 
 # Using sklearn 
 # kf = KFold(n_splits=5, shuffle=True, random_state=4) 
