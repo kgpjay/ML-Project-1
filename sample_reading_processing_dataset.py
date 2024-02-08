@@ -15,7 +15,7 @@ with open('cars.csv', 'r') as read_obj:
 			
 		if str_data[i][7]==' US.':
 			str_data[i][7] = 0
-		elif str_data[i][7]==' Japan.':
+		elif str_data[i][7]=="Japan":
 			str_data[i][7] = 1
 		elif str_data[i][7]==' Europe.':
 			str_data[i][7] = 2
