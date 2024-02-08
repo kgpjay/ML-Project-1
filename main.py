@@ -20,7 +20,6 @@ for i, row in df.iterrows():
     for j in range(1, len(row)):
         if not df.iloc[i, j] in encoding[attributes[j]]:
             encoding[attributes[j]][df.iloc[i, j]] = len(encoding[attributes[j]])
-        # df.iloc[i, j] = encoding[df.columns[j]][row[j]]
 
 print(f"Dimension of the dataset {df.shape}")
 print(df.columns)
@@ -69,15 +68,15 @@ for i,(train_index, test_index) in enumerate(kf.split(X)):
 
     # accuracy = accuracy_score(y_pred, Y_test) 
 
-    clf = DecisionTree()
-    print(f"TRAINING FOR FOLD {i}")
+    clf = DecisionTree(max_depth=3)
+    print(f"\nTRAINING FOR FOLD {i}")
     clf.fit(X_train, Y_train)
     y_pred = clf.predict(X_test)
 
     accuracy = clf.accuracy(y_pred, Y_test)
 
     print(f"fold {i} accuracy= {accuracy*100}") 
-    clf.draw_tree()
+    clf.draw_tree(f"plots/fold_{i}.png")
 
     # plt.figure(figsize=(15, 10))
     # plot_tree(clf, filled=True)

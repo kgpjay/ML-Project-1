@@ -1,6 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import math 
+import os
 import pandas as pd 
 import time 
 
@@ -23,12 +24,13 @@ class DecisionTree:
             self.final_class = final_class
             self.next = {} 
 
-    def __init__(self, max_depth=10) -> None:
+    def __init__(self, max_depth=None) -> None:
         self.max_depth = max_depth 
+        self.depth = 0 
     
     def fit(self, X_train, y_train):
-        self.root = self.build(X_train, y_train, {})
-        print("Done training")
+        self.root = self.build(X_train, y_train, attributes_taken={}, current_depth=1)
+        print(f"Done training \nDepth of tree = {self.depth}")
 
     def predict(self, X_test):
         y_pred = pd.Series(range(X_test.shape[0]), index=X_test.index)
@@ -130,10 +132,19 @@ class DecisionTree:
         #create a node object 
         return self.node(final_class=choosen_class)
     
-    def build(self, X_train, y_train, attributes_taken):
+    def build(self, X_train, y_train, attributes_taken, current_depth):
         initial_entropy = self.entropy(X_train, y_train, attributes_taken)
+        self.depth = max(self.depth, current_depth)   #update current depth of tree 
 
-        if initial_entropy == 0.0:
+        if not self.max_depth is None and self.max_depth == current_depth:
+            '''
+                Prune the branch
+                Get the majority class 
+            ''' 
+            leaf = self.build_leaf(X_train, y_train, attributes_taken)
+            return leaf 
+
+        elif initial_entropy == 0.0:
             #Make a leaf node 
             # print(attributes_taken, end=" ") 
             
@@ -153,8 +164,8 @@ class DecisionTree:
             # print(f"We have choose {choosen_attr} with IG {igs[choosen_attr]}")
             # new_node = self.node(attribute=choosen_one)
 
-            # Exhuasted all atributes 
             if len(igs) == 0:
+                # Exhuasted all atributes 
                 leaf = self.build_leaf(X_train, y_train, attributes_taken)
                 return leaf 
             else:
@@ -164,7 +175,7 @@ class DecisionTree:
 
                 for value in new_node.next:
                     attributes_taken[choosen_attr] = value
-                    new_node.next[value] = self.build(X_train, y_train, attributes_taken)
+                    new_node.next[value] = self.build(X_train, y_train, attributes_taken, current_depth+1)
                     attributes_taken.pop(choosen_attr) 
                 
                 return new_node 
@@ -192,7 +203,7 @@ class DecisionTree:
                 diff += 1 
         return same/(same+diff) 
     
-    def draw_tree(self):
+    def draw_tree(self, filepath: str):
         G = nx.DiGraph()
 
         def add_edges(node):
@@ -210,6 +221,9 @@ class DecisionTree:
         node_shape = 's'  # Square
         node_size = 700
 
+        #clear the plot 
+        plt.clf()        
+
         # Visualize the tree with straight edges and square nodes
         nx.draw(G, pos, with_labels=True, node_size=node_size, node_color="skyblue", font_size=10, font_color="black", font_weight="bold", node_shape=node_shape, arrowsize=20, edgecolors='black', linewidths=1, width=1)
 
@@ -217,5 +231,6 @@ class DecisionTree:
         edge_labels = nx.get_edge_attributes(G, 'label')
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red', font_size=8)
 
-        # Show the plot
-        plt.show()
+        # save the plot
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        plt.savefig(filepath)
