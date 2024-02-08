@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score
 from DecisionTree import DecisionTree
 
 
-df = pd.read_csv('./Thyroid_Diff.csv')
+df = pd.read_csv('Thyroid_Diff.csv')
 
 encoding = {}
 
