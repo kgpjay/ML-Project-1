@@ -1,5 +1,8 @@
+import networkx as nx
+import matplotlib.pyplot as plt
 import math 
 import pandas as pd 
+import time 
 
 
 # tree nodes 
@@ -31,7 +34,6 @@ class DecisionTree:
         y_pred = pd.Series(range(X_test.shape[0]), index=X_test.index)
 
         for index, row in X_test.iterrows():
-            print(index)
             y_pred[index] = self.get_class(row, self.root)
         
         return y_pred
@@ -123,6 +125,8 @@ class DecisionTree:
         # get key max value in class_cnt
         choosen_class = max(class_cnt, key=class_cnt.get)
 
+        # print(choosen_class)
+
         #create a node object 
         return self.node(final_class=choosen_class)
     
@@ -131,6 +135,8 @@ class DecisionTree:
 
         if initial_entropy == 0.0:
             #Make a leaf node 
+            # print(attributes_taken, end=" ") 
+            
             leaf = self.build_leaf(X_train, y_train, attributes_taken)
             return leaf 
         else:
@@ -185,3 +191,31 @@ class DecisionTree:
             else:
                 diff += 1 
         return same/(same+diff) 
+    
+    def draw_tree(self):
+        G = nx.DiGraph()
+
+        def add_edges(node):
+            for edge, child_node in node.next.items():
+                G.add_edge(node.attribute if node.attribute is not None else node.final_class,
+                        child_node.attribute if child_node.attribute is not None else child_node.final_class,
+                        label=edge)
+                add_edges(child_node)
+
+        add_edges(self.root)
+
+        pos = nx.nx_agraph.graphviz_layout(G, prog='dot', args='-Gnodesep=1 -Granksep=1 -Goverlap=false -Gsplines=line -Gmodel=subset -Gstrict=false -Grankdir=TB')
+
+        # Customize node shape and size
+        node_shape = 's'  # Square
+        node_size = 700
+
+        # Visualize the tree with straight edges and square nodes
+        nx.draw(G, pos, with_labels=True, node_size=node_size, node_color="skyblue", font_size=10, font_color="black", font_weight="bold", node_shape=node_shape, arrowsize=20, edgecolors='black', linewidths=1, width=1)
+
+        # Draw edge labels
+        edge_labels = nx.get_edge_attributes(G, 'label')
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red', font_size=8)
+
+        # Show the plot
+        plt.show()
