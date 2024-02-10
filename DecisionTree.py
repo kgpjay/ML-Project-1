@@ -38,7 +38,13 @@ class DecisionTree:
         for index, row in X_test.iterrows():
             y_pred[index] = self.get_class(row, self.root)
         
-        return y_pred
+        # Find the maximum occurring value in y_pred
+        max_occurring_value = y_pred.mode()[0]  # Mode returns a Series, so we take the first value
+
+        # Replace None values in y_pred with the maximum occurring value
+        y_pred_filled = y_pred.fillna(max_occurring_value)
+
+        return y_pred_filled
 
     def entropy(self, X_train, y_train, attributes_taken):
         y_count = { key : 0 for key in y_train.unique() }
@@ -57,11 +63,6 @@ class DecisionTree:
         
         tot = sum(value for value in y_count.values())
         
-        # if any(value==sum for value in y_count.values()):
-        #     for key in y_count:
-        #         if y_count[key] == tot:
-        #             return key 
-        # else:
         entropy = 0.0 
         for value in y_count.values():
             if value == 0:
@@ -234,3 +235,63 @@ class DecisionTree:
         # save the plot
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         plt.savefig(filepath)
+
+    def count_total_nodes(self, node_ptr=None):
+        if node_ptr is None:
+            node_ptr = self.root 
+        
+        if node_ptr.attribute is None:
+            return 1 
+        else:
+            count = 1 
+            for next in node_ptr.next.values():
+                count += self.count_total_nodes(next)
+        
+        return count 
+
+    def reduced_err_prunning(self, X_val, y_val):
+
+        #validation accuracy before pruning 
+        val_accuracy_before_pruning = self.accuracy(self.predict(X_val), y_val)
+        print(f"Accuracy on validation (before pruning) = {val_accuracy_before_pruning}")
+        print(f"Total Nodes (before pruning) = {self.count_total_nodes()}")
+
+        #pruning 
+        self.prune_subtree_rec(self.root, X_val, y_val, X_val_stat=X_val, y_val_stat=y_val)
+
+        #validation accuracy after pruning 
+        val_accuracy_after_pruning = self.accuracy(self.predict(X_val), y_val)
+        print(f"Accuracy on validation (after pruning) = {val_accuracy_after_pruning}")
+        print(f"Total Nodes (after pruning) = {self.count_total_nodes()}")
+
+    def prune_subtree_rec(self, node, X_val, y_val, X_val_stat, y_val_stat):
+        
+        if node.attribute is None:
+            return 
+        
+        #prune children if not leaf node 
+        for attr_value, child in node.next.items():
+            X_val_sub = X_val[X_val[node.attribute] == attr_value ]
+            y_val_sub = y_val.loc[X_val_sub.index] 
+
+            if len(y_val_sub) == 0:
+                continue
+            self.prune_subtree_rec(child, X_val_sub, y_val_sub, X_val_stat, y_val_stat)
+
+        val_accuracy_before_prunning = self.accuracy(self.predict(X_val_stat), y_val_stat)
+
+        #prune the subtree rooted at this node 
+        choosen_attribute = node.attribute 
+        node.attribute = None 
+        node.final_class =  y_val.value_counts().idxmax()
+
+        val_accuracy_after_prunning = self.accuracy(self.predict(X_val_stat), y_val_stat)
+        # if accuracy decreases revert back to original node 
+        if val_accuracy_after_prunning < val_accuracy_before_prunning + 0.00001:
+            node.attribute = choosen_attribute
+            node.final_class = None 
+        else:
+            #keeping it as leaf node, clearning next pointers 
+            next = {}
+    
+        

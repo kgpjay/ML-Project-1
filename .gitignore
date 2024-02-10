@@ -2,4 +2,4 @@ projenv/
 __pycache__/
 TPNB_dataset/
 *.zip
-*.csv
+output.csv
