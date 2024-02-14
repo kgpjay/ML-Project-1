@@ -42,7 +42,6 @@ for i,(train_index, test_index) in enumerate(kf.split(X)):
     accuracy = clf.accuracy(y_pred, Y_test)
 
     print(f"fold {i} accuracy= {accuracy*100}") 
-    sum+=accuracy
     
     print(y_pred.value_counts())
     print(f"Total number of nodes = {clf.count_total_nodes()}")
@@ -51,10 +50,16 @@ for i,(train_index, test_index) in enumerate(kf.split(X)):
 
     print(f"PRUNING ON FOLD {i}")
     clf.reduced_err_prunning(X_test, Y_test)
-    print(f"Accurary on training data (after pruning) = {clf.accuracy(clf.predict(X_train), Y_train)}")
+    accuracy = clf.accuracy(clf.predict(X_train), Y_train)
+    print(f"Accurary on training data (after pruning) = {accuracy}")
+    sum += accuracy
 
     # saving the plot of tree in ./plots directory
-    clf.draw_tree(f"plots/fold_{i}.png")
+    try:
+        clf.draw_tree(f"plots/fold_{i}.png")
+    except:
+        pass 
+    
 
 print(f"\n\nAverage accuracy of 5 folds: {sum*100/5}")
 
